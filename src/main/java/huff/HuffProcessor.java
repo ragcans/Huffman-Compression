@@ -103,12 +103,12 @@ public class HuffProcessor implements Processor {
             HuffNode n2 = tree.poll();
 
             // TODO what is the value of this node?
-            HuffNode pNode = new HuffNode(0, n1.weight()+n2.weight(), n1, n2);
+            HuffNode pNode = new HuffNode(-1, n1.weight()+n2.weight(), n1, n2);
 
             tree.add(pNode);
         }
 
-
+        
         return tree.peek();
     }
 
@@ -139,8 +139,28 @@ public class HuffProcessor implements Processor {
      * current encoding is added to the array.*/
 
     private String[] makeCodingsFromTree(HuffNode root) {
-        // TODO: Step 3! You will need to create a helper recursive method
-        return new String[257];
+        // Step 3! You will need to create a helper recursive method
+        String[] encode = new String[257];
+        String encoding = "";
+
+        for (int i = 0; i < encode.length; i++) {
+            makeCodingsFromTree(encode, encoding, i, root);
+            encoding = "";
+        }
+        
+        return encode;
+    }
+
+    private void makeCodingsFromTree(String[] encode, String encoding, int index, HuffNode n) {
+        // base case
+        if (n.isLeaf()) {
+            encode[index] = encoding;
+            return;
+        }
+
+        // recursive step
+        makeCodingsFromTree(encode, encoding + "1", index, n.right());
+        makeCodingsFromTree(encode, encoding + "0", index, n.right());
     }
 
 
