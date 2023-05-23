@@ -103,8 +103,6 @@ public class HuffProcessor implements Processor {
         while (tree.size() > 1) {
             HuffNode n1 = tree.poll();
             HuffNode n2 = tree.poll();
-
-            // TODO what is the value of this node?
             HuffNode pNode = new HuffNode(-1, n1.weight()+n2.weight(), n1, n2);
 
             tree.add(pNode);
@@ -242,7 +240,7 @@ public class HuffProcessor implements Processor {
     /** Reads the header of the compressed file and returns encoding trie.
      * This method uses a recursion.  The algorithm is:
      * Read one bit from the input.
-     * If the bit is a 0, recurse left and right, creating two new HuffNodes.  Then,
+     * If the bit is a 0, recurse left and right, creating two new HuffNodes. Then,
      * return a new HuffNode with the left and right nodes as the new node's children.
      * If the bit is a 1, read 9 bits from the input and create a HuffNode using these bits.
      * The weight of the HuffNodes does not matter during decompression and can be set to -1.
@@ -250,9 +248,18 @@ public class HuffProcessor implements Processor {
     HuffNode readHeader (BitInputStream in)
     {
         // TODO: Step 6
+        int bit = in.readBits(1);
         
-        return new HuffNode (-1, -1);
+        // base case
+        if (bit == 1) {
+            int bits = in.readBits(9);
+            return new HuffNode(bits, -1);
+        }
 
+        // recursive step
+        HuffNode n1 = readHeader(in);
+        HuffNode n2 = readHeader(in);
+        return new HuffNode(-1, -1, n1, n2);
     }
 
     /** Reads the body of the compressed file.  Start at the root of the tree.
@@ -264,7 +271,25 @@ public class HuffProcessor implements Processor {
      */
     private void readCompressedBits(HuffNode root, BitInputStream in, BitOutputStream out)
     {
-        // TODO: Step 7
+        // base case
+        if (root.isLeaf()) {
+            if (root.value() == PSEUDO_EOF) {
+                return;
+            }
+            out.writeBits(8, root.value());
+            return;
+        }
+        
+        int bit = in.readBits(1);
+
+        // recursive steps
+        if (bit == 1) {
+            readCompressedBits(root.right(), in, out);
+        }
+        if (bit == 0) {
+            readCompressedBits(root.left(), in, out);
+        }
+
     }
 
 
