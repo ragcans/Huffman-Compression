@@ -210,13 +210,13 @@ public class HuffProcessor implements Processor {
      */
     private void writeCompressedBits(BitInputStream in, String[] codings, BitOutputStream out)
     {
-        int bits = in.readBits(BITS_PER_WORD);
+        int bits = in.readBits(8);
 
         while (bits != -1) {
             String code = codings[bits];
             out.writeBits(code.length(), Integer.parseInt(code, 2));
 
-            bits = in.readBits(BITS_PER_WORD);
+            bits = in.readBits(8);
         }
 
         String end = codings[PSEUDO_EOF];
