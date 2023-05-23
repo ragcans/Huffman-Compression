@@ -90,6 +90,7 @@ public class HuffProcessor implements Processor {
     private HuffNode makeTreeFromCounts(int[] array) {
         PriorityQueue<HuffNode> tree = new PriorityQueue<>();
         
+        // finds all nodes that have values
         for (int i = 0; i < array.length && array[i] > 0; i++) {
             HuffNode n = new HuffNode(i, array[i]);
             tree.add(n);
@@ -98,6 +99,7 @@ public class HuffProcessor implements Processor {
         // add EOF 
         tree.add(new HuffNode(PSEUDO_EOF, 1));
 
+        // takes the 2 smallest nodes, adds em up and pushes em back on
         while (tree.size() > 1) {
             HuffNode n1 = tree.poll();
             HuffNode n2 = tree.poll();
@@ -185,7 +187,17 @@ public class HuffProcessor implements Processor {
      */
     private void writeHeader (HuffNode n, BitOutputStream out)
     {
-        // TODO: Step 4
+        // base case
+        if (n.isLeaf()) {
+            out.writeBits(1, 1);
+            out.writeBits(9, n.value());
+            return;
+        }
+
+        // recursive step
+        out.writeBits(1, 0);
+        writeHeader(n.left(), out);
+        writeHeader(n.right(), out);
     }
 
     /** Write the body of the compressed file.  Read through the input stream 8 bits
@@ -200,7 +212,17 @@ public class HuffProcessor implements Processor {
      */
     private void writeCompressedBits(BitInputStream in, String[] codings, BitOutputStream out)
     {
-        // TODO: Step 5
+        int bits = in.readBits(BITS_PER_WORD);
+
+        while (bits != -1) {
+            String code = codings[bits];
+            out.writeBits(code.length(), Integer.parseInt(code, 2));
+
+            bits = in.readBits(BITS_PER_WORD);
+        }
+
+        String end = codings[PSEUDO_EOF];
+        out.writeBits(end.length(), Integer.parseInt(end, 2));
     }
 
 
@@ -228,7 +250,9 @@ public class HuffProcessor implements Processor {
     HuffNode readHeader (BitInputStream in)
     {
         // TODO: Step 6
+        
         return new HuffNode (-1, -1);
+
     }
 
     /** Reads the body of the compressed file.  Start at the root of the tree.
