@@ -91,9 +91,11 @@ public class HuffProcessor implements Processor {
         PriorityQueue<HuffNode> tree = new PriorityQueue<>();
         
         // finds all nodes that have values
-        for (int i = 0; i < array.length && array[i] > 0; i++) {
-            HuffNode n = new HuffNode(i, array[i]);
-            tree.add(n);
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] > 0) {
+                HuffNode n = new HuffNode(i, array[i]);
+                tree.add(n);
+            }
         }
 
         // add EOF 
@@ -143,24 +145,20 @@ public class HuffProcessor implements Processor {
         String[] encode = new String[257];
         String encoding = "";
 
-        for (int i = 0; i < encode.length; i++) {
-            makeCodingsFromTree(encode, encoding, i, root);
-            encoding = "";
-        }
-        
+        makeCodingsFromTree(encode, encoding, root);
         return encode;
     }
 
-    private void makeCodingsFromTree(String[] encode, String encoding, int index, HuffNode n) {
+    private void makeCodingsFromTree(String[] encode, String encoding, HuffNode n) {
         // base case
         if (n.isLeaf()) {
-            encode[index] = encoding;
+            encode[n.value()] = encoding;
             return;
         }
 
         // recursive step
-        makeCodingsFromTree(encode, encoding + "1", index, n.right());
-        makeCodingsFromTree(encode, encoding + "0", index, n.right());
+        makeCodingsFromTree(encode, encoding + "0", n.left());
+        makeCodingsFromTree(encode, encoding + "1", n.right());
     }
 
 
@@ -249,6 +247,10 @@ public class HuffProcessor implements Processor {
     {
         // TODO: Step 6
         int bit = in.readBits(1);
+
+        if (bit == -1) {
+            throw new HuffException("error in readHeader");
+        }
         
         // base case
         if (bit == 1) {
@@ -259,7 +261,7 @@ public class HuffProcessor implements Processor {
         // recursive step
         HuffNode n1 = readHeader(in);
         HuffNode n2 = readHeader(in);
-        return new HuffNode(-1, -1, n1, n2);
+        return new HuffNode(0, -1, n1, n2);
     }
 
     /** Reads the body of the compressed file.  Start at the root of the tree.
@@ -271,6 +273,12 @@ public class HuffProcessor implements Processor {
      */
     private void readCompressedBits(HuffNode root, BitInputStream in, BitOutputStream out)
     {
+        int bit = in.readBits(1);
+
+        if (bit == -1) {
+            return;
+        }
+        
         // base case
         if (root.isLeaf()) {
             if (root.value() == PSEUDO_EOF) {
@@ -279,9 +287,7 @@ public class HuffProcessor implements Processor {
             out.writeBits(8, root.value());
             return;
         }
-        
-        int bit = in.readBits(1);
-
+    
         // recursive steps
         if (bit == 1) {
             readCompressedBits(root.right(), in, out);
