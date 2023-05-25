@@ -274,27 +274,28 @@ public class HuffProcessor implements Processor {
     private void readCompressedBits(HuffNode root, BitInputStream in, BitOutputStream out)
     {
         int bit = in.readBits(1);
+        HuffNode n = root;
 
-        if (bit == -1) {
-            return;
-        }
-        
-        // base case
-        if (root.isLeaf()) {
-            if (root.value() == PSEUDO_EOF) {
+        while (bit != -1) {
+            while (!n.isLeaf()) {
+                if (bit == 0) {
+                    n = n.left();
+                } else {
+                    n = n.right();
+                }
+
+                bit = in.readBits(1);
+            }
+
+            if (n.value() == PSEUDO_EOF) {
                 return;
             }
-            out.writeBits(8, root.value());
-            return;
+
+            out.writeBits(8, n.value());
+            n = root;
         }
-    
-        // recursive steps
-        if (bit == 1) {
-            readCompressedBits(root.right(), in, out);
-        }
-        if (bit == 0) {
-            readCompressedBits(root.left(), in, out);
-        }
+
+
 
     }
 
